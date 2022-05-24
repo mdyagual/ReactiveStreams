@@ -64,7 +64,7 @@ public class FunctionalApplication {
 		/*4: Get all the restaurants that received grade C in the most recent data
 		HINT: The recent score is always the first one inside the list of the key "grades".*/
 
-		/*5: Sort all the restaurants by the grade that has received in the most recent date. If the are not receiving a grade yet, ignore them.
+		/*5: Sort all the restaurants by the grade that has received in the most recent date. If the are not receiving a grade yet (grade=Not Yet Graded), ignore them.
 		* HINT: Consider create a small Restaurant object with the data that you need to archive this exercise*/
 
 
