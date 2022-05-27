@@ -5,12 +5,11 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
+import org.bson.json.JsonObject;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -21,10 +20,29 @@ import java.util.stream.Stream;
 class Restaurant{
 	String resName;
 	String gradeScored;
+	Integer score;
+	String address;
 
 	Restaurant (String resName, String gradeScored){
 		this.resName = resName;
 		this.gradeScored = gradeScored;
+	}
+
+	Restaurant (String resName, String gradeScored, Integer score, String address){
+		this.resName = resName;
+		this.gradeScored = gradeScored;
+		this.score= score;
+		this.address = address;
+	}
+
+	@Override
+	public String toString() {
+		return "Restaurant{" +
+				"resName='" + resName + '\'' +
+				", gradeScored='" + gradeScored + '\'' +
+				", score=" + score +
+				", address='" + address + '\'' +
+				'}';
 	}
 }
 
@@ -62,7 +80,8 @@ public class FunctionalApplication {
 		sortRestaurantsByGrade(dataRestaurants);
 
 
-		//6: Get the restaurant with B category with the highest score in the most recent date
+		//6: Get the restaurant with B grade with the highest score in the most recent date
+		highestScoreGrade(dataRestaurants);
 
 		/*7 (Optional): Investigate zip function (import org.springframework.data.util.StreamUtils;) to generate a list of strings with the next elements:
 		-A stream that contains all the names of the restaurant
@@ -114,9 +133,9 @@ public class FunctionalApplication {
 	}
 	//3
 	public static void namesWith1Word (ArrayList<Document> dataRestaurants){
-		Predicate<Document> isJustASingleWord = (d) -> !(d.get("name").toString().contains(" ")) && !(d.get("name").toString().equals(""));
+		Predicate<Document> isJustASingleWord = (d) -> !(d.getString("name").contains(" ")) && !(d.getString("name").equals(""));
 		Set<String> singleName = dataRestaurants.stream()
-				.filter(n -> isJustASingleWord.test(n)).collect(Collectors.toSet()).stream().map(document -> document.get("name").toString()).collect(Collectors.toUnmodifiableSet());
+				.filter(n -> isJustASingleWord.test(n)).collect(Collectors.toSet()).stream().map(document -> document.getString("name")).collect(Collectors.toUnmodifiableSet());
 		//------------
 
 
@@ -128,13 +147,13 @@ public class FunctionalApplication {
 	//4
 	public static void restaurantsGradeC(ArrayList<Document> dataRestaurants){
 		Function<Document,List<Document>> getGrade= (restaurant) -> restaurant.getList("grades",Document.class);
-
+		System.out.println("Filter #4");
 		dataRestaurants.stream().forEach(r -> {
 			List<Document> grade = getGrade.apply(r);
 			if(grade.stream().count()>0){
-				var g = grade.get(0).get("grade");
+				var g = grade.get(0).getString("grade");
 				if(g.equals("C"))
-					System.out.println(r.get("name")+": "+g);
+					System.out.println(r.getString("name")+": "+g);
 			}
 		});
 
@@ -145,10 +164,10 @@ public class FunctionalApplication {
 		Function<Document,List<Document>> getGrade2= (restaurant) -> restaurant.getList("grades",Document.class);
 		List<Restaurant> restaurants = new ArrayList<>();
 		dataRestaurants.stream().forEach(restaurant -> {
-			var resName = restaurant.get("name").toString();
+			var resName = restaurant.getString("name");
 			var grade = getGrade2.apply(restaurant);
 			if(grade.stream().count()>0){
-				var g = grade.get(0).get("grade").toString();
+				var g = grade.get(0).getString("grade");
 				if(!g.equals("Not Yet Graded"))
 					restaurants.add(new Restaurant(resName,g));
 
@@ -156,10 +175,40 @@ public class FunctionalApplication {
 
 		});
 		List<Restaurant> ordenRestaurantes = restaurants.stream().sorted(Comparator.comparing(g -> g.gradeScored)).collect(Collectors.toList());
+		System.out.println("Filter #5");
 		ordenRestaurantes.forEach(System.out::println);
 	}
 	//6
-	public static void highestScoreGrade (){
+	public static void highestScoreGrade (ArrayList<Document> dataRestaurants){
+		Function<Document,List<Document>> getGrades= (restaurant) -> restaurant.getList("grades",Document.class);
+
+
+		Function<Document,Boolean> bGraded=(restaurant) -> getGrades.apply(restaurant).size()>0? getGrades.apply(restaurant).get(0).get("grade").equals("B"): false;
+		Predicate<Integer> changingNull = Objects::nonNull;
+
+		List<Restaurant> restaurantsSet=dataRestaurants.stream().filter(bGraded::apply).map(r -> {
+
+			Document restDoc = new Document();
+
+			var name = r.getString("name");
+			var grades = getGrades.apply(r);
+			var address = r.get("address").toString();
+			var score = grades.get(0).getInteger("score");
+			restDoc.append("name",name);
+			restDoc.append("grade",grades.get(0).getString("grade"));
+			restDoc.append("score",changingNull.test(score)?score:-1);
+			restDoc.append("street",address);
+
+			var restaurant = new Restaurant(restDoc.getString("name"),restDoc.getString("grade"),restDoc.getInteger("score"),restDoc.getString("street"));
+			return restaurant;
+
+		}).collect(Collectors.toList());
+
+		System.out.println("Filter #6");
+		Restaurant r = restaurantsSet.stream().max(Comparator.comparingInt(res -> res.score)).get();
+
+		System.out.println(r);
+
 
 	}
 
