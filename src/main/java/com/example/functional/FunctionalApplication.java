@@ -57,7 +57,7 @@ public class FunctionalApplication {
 		restaurantsGradeC(dataRestaurants);
 
 
-		/*5: Sort all the restaurants by the grade that has received in the most recent date. If the are not receiving a grade yet, ignore them.
+		/*5: Sort all the restaurants by the grade that has received in the most recent date. If the are not receiving a grade yet (grade=Not Yet Graded), ignore them.
 		* HINT: Consider create a small Restaurant object with the data that you need to archive this exercise*/
 		sortRestaurantsByGrade(dataRestaurants);
 
